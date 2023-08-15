@@ -57,6 +57,8 @@ def __init__():
     parser.add_argument('-r', '--request-timeout', dest='timeout', type=float, default=1.0, help='Timeout for all http requests')
     parser.add_argument('-a', '--active-threads', dest='threads', type=int, default=30, help='Threads for all http requests')
     parser.add_argument('-u', '--user-agent', dest='user_agent', default='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36', type=str, help='Use custom user agent')
+    parser.add_argument('-i', '--include-filter', dest='reponse_type', type=str, choices=['INFO', 'SUCCESS', 'REDIRECTION', 'CLIENT_ERROR', 'SERVER_ERROR'], help='Include HTTP reponse type')
+    parser.add_argument('-x', '--exclude-filter', dest='reponse_type', type=str, choices=['INFO', 'SUCCESS', 'REDIRECTION', 'CLIENT_ERROR', 'SERVER_ERROR'], help='Exclude HTTP reponse type')
     parser.add_argument('-c', '--common-ports', action='store_true', help='Check all common webserver ports (seclists)')
     parser.add_argument('-v', '--verbose', action='store_true', help='Display verbose output (timeouts/errors)')
     args, sysargs = parser.parse_known_args()
@@ -83,7 +85,8 @@ def main(args):
                             threads.append(executor.submit(enum_target, target=f'http://{url}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                             threads.append(executor.submit(enum_target, target=f'https://{url}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                 for task in as_completed(threads):
-                    print(task.result())
+                    if task.result() is not None:
+                        print(task.result())
             else:
                 threads = []
                 with ThreadPoolExecutor(max_workers=args.threads) as executor:
@@ -91,7 +94,8 @@ def main(args):
                         threads.append(executor.submit(enum_target, target=f'http://{url}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                         threads.append(executor.submit(enum_target, target=f'https://{url}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                 for task in as_completed(threads):
-                    print(task.result())
+                    if task.result() is not None:
+                        print(task.result())
         if type(target) is str:
             if args.common_ports:
                 threads = []
@@ -100,14 +104,16 @@ def main(args):
                         threads.append(executor.submit(enum_target, target=f'http://{target}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                         threads.append(executor.submit(enum_target, target=f'https://{target}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                 for task in as_completed(threads):
-                    print(task.result())
+                    if task.result() is not None:
+                        print(task.result())
             else:
                 threads = []
                 with ThreadPoolExecutor(max_workers=args.threads) as executor:
                     threads.append(executor.submit(enum_target, target=f'http://{target}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                     threads.append(executor.submit(enum_target, target=f'https://{target}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose))
                 for task in as_completed(threads):
-                    print(task.result())
+                    if task.result() is not None:
+                        print(task.result())
     except KeyboardInterrupt:
         print(f'{cli.red} leaving..{cli.endc}')
         exit()
