@@ -13,5 +13,5 @@ Just some 1337 Racoon digging through other people's trash cans.
 │ ReconRacoon        `-"`-"  " "            │
 └───────────────────────────────────────────┘
 
-usage: ReconRacoon.py {template}
+usage: ReconRacoon.py {resolve, template}
 ```
