@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
+from src.framework import cli
 
 
 # Init
@@ -14,4 +15,6 @@ def __init__():
 
 # Main
 def main(args):
+    print(cli.current_date)
+    print(cli.current_time)
     print(args.target)
