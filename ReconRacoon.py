@@ -11,7 +11,7 @@ print(cli.racoon)
 # Parse modules
 modules = [f.strip(".py") for f in listdir('src/modules') if f.endswith('.py') and isfile(join('src/modules', f))]
 # Args
-parser = argparse.ArgumentParser(prog='ReconRacoon.py', description='Web Security Testing Framework')
+parser = argparse.ArgumentParser(prog='ReconRacoon.py', description='Web Security Testing Framework', add_help=False)
 parser.add_argument('module', choices=modules)
 args, unknown = parser.parse_known_args()
 
