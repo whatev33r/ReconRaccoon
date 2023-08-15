@@ -6,7 +6,7 @@ from src.framework import cli
 
 # Init
 def __init__():
-    parser = argparse.ArgumentParser(prog='reconracoon.py template', description='Module for TEMPLATE')
+    parser = argparse.ArgumentParser(prog='ReconRacoon.py template', description='Module for TEMPLATE')
     parser.add_argument('-t', '--target', required=True)
     args, sysargs = parser.parse_known_args()
     # Call main function
