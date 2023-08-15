@@ -13,8 +13,7 @@ modules = [f.strip(".py") for f in listdir('src/modules') if f.endswith('.py') a
 # Args
 parser = argparse.ArgumentParser(prog='ReconRacoon.py', description='Web Security Testing Framework')
 parser.add_argument('module', choices=modules)
-# parser.add_argument('-L', '--list-modules', action='store_true')
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 # Main
 if __name__ == '__main__':
