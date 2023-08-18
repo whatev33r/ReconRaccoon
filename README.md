@@ -38,3 +38,24 @@ options:
   -v, --verbose         Display verbose output (timeouts/errors)
 
 ```
+
+
+## Module: Crawl
+```
+usage: ReconRacoon.py crawl [-h] -t TARGET [-c REGEX] [-r TIMEOUT] [-a THREADS] [-u USER_AGENT] [-v]
+
+options:
+  -h, --help            show this help message and exit
+  -t TARGET, --target TARGET
+                        Target URLs or IPs (str/file)
+  -c REGEX, --custom-regex REGEX
+                        Crawl request body for custom regex (default="(?:href|src|action)=([^\s]*[\"|'])")
+  -r TIMEOUT, --request-timeout TIMEOUT
+                        Timeout for all http requests (default=1.0)
+  -a THREADS, --active-threads THREADS
+                        Threads for all http requests (default=20)
+  -u USER_AGENT, --user-agent USER_AGENT
+                        Use custom user agent
+  -v, --verbose         Display verbose output (timeouts/errors)
+
+```
