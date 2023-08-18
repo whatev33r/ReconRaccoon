@@ -13,6 +13,9 @@ purple = '\033[35m'
 cyan = '\033[36m'
 white = '\033[37m'
 
+# Styles
+bold = '\033[01m'
+
 # Timestamp
 now = datetime.datetime.now()
 current_time = now.strftime("%H:%M:%S")
