@@ -5,7 +5,6 @@ from src.framework import cli
 from src.framework import functions
 # Custom imports
 import re
-import os
 import urllib3
 import requests
 from concurrent.futures import ThreadPoolExecutor
