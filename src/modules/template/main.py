@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 from src.framework import cli
+from src.framework import functions
 
 
 # Init
@@ -17,4 +18,7 @@ def __init__():
 def main(args):
     print(cli.current_date)
     print(cli.current_time)
-    print(args.target)
+    # Prefix
+    target = functions.check_prefix(args.target, None)
+    # Target
+    print(target)
