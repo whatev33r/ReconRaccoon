@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 from src.framework import cli
+from src.framework import functions
 # Custom imports
 import re
 import os
@@ -35,7 +36,7 @@ def crawl(target, timeout, headers, verbose, follow_redirect, regex):
         else:
             pass
         for x in match:
-            print(f'├─[{x}]')
+            print(f'├─[{cli.green}{x}{cli.endc}]')
         print(f'└─ Fetched {cli.bold}{len(match)}{cli.endc} paths...')
     except requests.exceptions.ConnectTimeout:
         if verbose is True:
@@ -65,24 +66,13 @@ def __init__():
 # Main
 def main(args):
     print(f'{cli.blue}[*]{cli.endc} Regex: {args.regex}')
-    # Validate Target
-    if os.path.isfile(args.target) is True:
-        with open(args.target) as file:
-            target = [x.strip() for x in file.readlines()]
-    else:
-        target = str(args.target)
+    # Prefix
+    target = functions.check_prefix(args.target, None)
     try:
-        if type(target) is list:
-            threads = []
-            with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                for url in target:
-                    threads.append(executor.submit(crawl, target=f'http://{url}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, follow_redirect=args.follow_redirects, regex=args.regex))
-                    threads.append(executor.submit(crawl, target=f'https://{url}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, follow_redirect=args.follow_redirects, regex=args.regex))
-        if type(target) is str:
-            threads = []
-            with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                threads.append(executor.submit(crawl, target=f'http://{target}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, follow_redirect=args.follow_redirects, regex=args.regex))
-                threads.append(executor.submit(crawl, target=f'https://{target}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, follow_redirect=args.follow_redirects, regex=args.regex))
+        threads = []
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
+            for url in target:
+                threads.append(executor.submit(crawl, target=url, timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, follow_redirect=args.follow_redirects, regex=args.regex))
     except KeyboardInterrupt:
         print(f'{cli.red} leaving..{cli.endc}')
         exit()
