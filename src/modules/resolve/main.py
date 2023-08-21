@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 from src.framework import cli
+from src.framework import functions
 # Custom Imports
 import os
 import requests
@@ -12,11 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
-# Common http ports
-ports = [66, 80, 81, 443, 445, 457, 1080, 1100, 1241, 1352, 1433, 1434, 1521,
-         1944, 2301, 3000, 3128, 3306, 4000, 4001, 4002, 4100, 4443, 5000,
-         5432, 5800, 5801, 5802, 6346, 6347, 7001, 7002, 8443, 8888, 30821]
-
 
 # Enumerate Host
 def request_target(target, timeout, headers, verbose, include_filter, exclude_filter, follow_redirect):
@@ -24,7 +20,7 @@ def request_target(target, timeout, headers, verbose, include_filter, exclude_fi
     sesh.keep_alive = False
     try:
         r = sesh.get(target, allow_redirects=follow_redirect, verify=False, timeout=timeout, headers=headers)
-        filter_out(target=target, req=r, include=include_filter, exclude=exclude_filter)
+        filter_out(req=r, include=include_filter, exclude=exclude_filter)
     except requests.exceptions.ConnectTimeout:
         if verbose is True:
             print(f'{cli.red}TIMEOUT{cli.endc} - {target} [{cli.red}after {timeout}/s {cli.endc}]')
@@ -36,14 +32,14 @@ def request_target(target, timeout, headers, verbose, include_filter, exclude_fi
 
 
 # Filter and output
-def filter_out(target, req, exclude, include):
+def filter_out(req, exclude, include):
     if 'server' in req.headers:
         srv = f"({req.headers['server']})"
     else:
         srv = ""
     # Include
     if include is not None:
-        if include == 'INFO' and req.status_code in range(100, 199) :
+        if include == 'INFO' and req.status_code in range(100, 199):
             print(f'{cli.blue}INFO{cli.endc} - {req.url} [{cli.blue}{req.status_code}{cli.endc}] {srv}')
         elif include == 'SUCCESS' and req.status_code in range(200, 299):
             print(f'{cli.green}SUCCESS{cli.endc} - {req.url} [{cli.green}{req.status_code}{cli.endc}] {srv}')
@@ -90,40 +86,14 @@ def __init__():
 
 # Main
 def main(args):
-    # Validate Target
-    if os.path.isfile(args.target) is True:
-        with open(args.target) as file:
-            target = [x.strip() for x in file.readlines()]
-    else:
-        target = str(args.target)
+    # Prefix
+    target = functions.check_prefix(args.target, args.common_ports)
     # Crawl
     try:
-        if type(target) is list:
-            if args.common_ports:
-                threads = []
-                with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                    for url in target:
-                        for port in ports:
-                            threads.append(executor.submit(request_target, target=f'http://{url}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-                            threads.append(executor.submit(request_target, target=f'https://{url}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-            else:
-                threads = []
-                with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                    for url in target:
-                        threads.append(executor.submit(request_target, target=f'http://{url}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-                        threads.append(executor.submit(request_target, target=f'https://{url}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-        if type(target) is str:
-            if args.common_ports:
-                threads = []
-                with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                    for port in ports:
-                        threads.append(executor.submit(request_target, target=f'http://{target}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-                        threads.append(executor.submit(request_target, target=f'https://{target}:{port}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-            else:
-                threads = []
-                with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                    threads.append(executor.submit(request_target, target=f'http://{target}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
-                    threads.append(executor.submit(request_target, target=f'https://{target}', timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
+        threads = []
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
+            for url in target:
+                threads.append(executor.submit(request_target, target=url, timeout=args.timeout, headers={'User-Agent': args.user_agent}, verbose=args.verbose, include_filter=args.include_filter, exclude_filter=args.exclude_filter, follow_redirect=args.follow_redirects))
     except KeyboardInterrupt:
         print(f'{cli.red} leaving..{cli.endc}')
         exit()
