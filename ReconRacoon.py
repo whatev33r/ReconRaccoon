@@ -4,13 +4,15 @@ import argparse
 import importlib
 import sys
 import subprocess
-from os import listdir
+import os
 from src.framework import cli
 
-# Print Banner
+# Print banner
 print(cli.racoon)
+# Get working dir
+working_dir = os.path.dirname(os.path.realpath(__file__))
 # Parse modules
-modules = [f for f in listdir('src/modules')]
+modules = [f for f in os.listdir(f'{working_dir}/src/modules')]
 
 # Args
 parser = argparse.ArgumentParser(prog='ReconRacoon.py', description='Web Security Testing Framework', add_help=False)
@@ -27,7 +29,7 @@ if __name__ == '__main__':
             init()
         elif args.setup:
             print(f"{cli.green}[+]{cli.endc} Installing Requirements: {args.setup}")
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'src/modules/{args.setup}/requirements.txt'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'{working_dir}/src/modules/{args.setup}/requirements.txt'])
 
         else:
             parser.print_help()
