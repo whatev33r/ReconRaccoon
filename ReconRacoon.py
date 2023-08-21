@@ -2,24 +2,34 @@
 # -*- coding: utf-8 -*-
 import argparse
 import importlib
+import sys
+import subprocess
 from os import listdir
-from os.path import isfile, join
 from src.framework import cli
 
 # Print Banner
 print(cli.racoon)
 # Parse modules
-modules = [f.strip(".py") for f in listdir('src/modules') if f.endswith('.py') and isfile(join('src/modules', f))]
+modules = [f for f in listdir('src/modules')]
+
 # Args
 parser = argparse.ArgumentParser(prog='ReconRacoon.py', description='Web Security Testing Framework', add_help=False)
-parser.add_argument('module', choices=modules)
+parser.add_argument('module', choices=modules, nargs='?', help='')
+parser.add_argument('-s', '--setup', choices=modules, help='')
 args, unknown = parser.parse_known_args()
 
 # Main
 if __name__ == '__main__':
     try:
-        print(f"{cli.green}[+]{cli.endc} Selected: {args.module}")
-        init = getattr(importlib.import_module(f'src.modules.{args.module}'), '__init__')
-        init()
+        if args.module:
+            print(f"{cli.green}[+]{cli.endc} Executing: {args.module}")
+            init = getattr(importlib.import_module(f'src.modules.{args.module}.main'), '__init__')
+            init()
+        elif args.setup:
+            print(f"{cli.green}[+]{cli.endc} Installing Requirements: {args.setup}")
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', f'src/modules/{args.setup}/requirements.txt'])
+
+        else:
+            parser.print_help()
     except Exception as E:
-        exit(E)
+        exit(f'{cli.red}[x]{cli.endc} Error: {E}')
