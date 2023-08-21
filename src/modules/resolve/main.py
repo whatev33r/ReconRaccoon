@@ -4,7 +4,6 @@ import argparse
 from src.framework import cli
 from src.framework import functions
 # Custom Imports
-import os
 import requests
 import urllib3
 from concurrent.futures import ThreadPoolExecutor
