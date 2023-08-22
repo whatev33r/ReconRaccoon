@@ -17,12 +17,12 @@ usage: ReconRacoon.py [-s {resolve,template,crawl}] [{resolve,template,crawl}]
 Web Security Testing Framework
 
 positional arguments:
-  {resolve,template,crawl}
+  {module}
 
 options:
-  -s {resolve,template,crawl}, --setup {resolve,template,crawl}
+  -s {module}, --setup {module}
 ```
 
 ## Requirements
 Install requirements of given module before using it via:
-> python3 ReconRacoon.py -s {resolve,template,crawl}, --setup {resolve,template,crawl}
+> python3 ReconRacoon.py -s {resolve,crawl,shcheck,etc..}, --setup {resolve,crawl,shcheck,etc..}
