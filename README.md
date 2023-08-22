@@ -12,7 +12,7 @@ Just some 1337 Racoon digging through other people's trash cans.
 │                   \( \(   \(\(            │
 │ ReconRacoon        `-"`-"  " "            │
 └───────────────────────────────────────────┘
-usage: ReconRacoon.py [-s {resolve,template,crawl}] [{resolve,template,crawl}]
+usage: ReconRacoon.py [-s {module}] [{module}]
 
 Web Security Testing Framework
 
