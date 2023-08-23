@@ -1,6 +1,6 @@
 ![Supported Python versions](https://img.shields.io/badge/python-3.7+-blue.svg)
 
-# ReconRacoon
+# ReconRaccoon
 Just some 1337 Racoon digging through other people's trash cans.
 
 ```
@@ -10,9 +10,9 @@ Just some 1337 Racoon digging through other people's trash cans.
 │                   .'       <─I─>          │
 │        <((((((((((  )____(  \./           │
 │                   \( \(   \(\(            │
-│ ReconRacoon        `-"`-"  " "            │
+│ ReconRaccoon       `-"`-"  " "            │
 └───────────────────────────────────────────┘
-usage: ReconRacoon.py [-s {module}] [{module}]
+usage: ReconRaccoon.py [-s {module}] [{module}]
 
 Web Security Testing Framework
 
@@ -25,4 +25,4 @@ options:
 
 ## Requirements
 Install requirements of given module before using it via:
-> python3 ReconRacoon.py -s {resolve,crawl,shcheck,etc..}, --setup {resolve,crawl,shcheck,etc..}
+> python3 ReconRaccoon.py -s {resolve,crawl,shcheck,etc..}, --setup {resolve,crawl,shcheck,etc..}
