@@ -23,6 +23,20 @@ options:
   -s {module}, --setup {module}
 ```
 
-## Requirements
-Install requirements of given module before using it via:
-> python3 ReconRaccoon.py -s {resolve,crawl,shcheck,etc..}, --setup {resolve,crawl,shcheck,etc..}
+## Install Package
+```
+pip install ReconRaccoon
+```
+
+## Current Modules
+- Resolve
+  - Resolves targets to get overview of initial HTTP response codes. 
+- Crawl
+  - Crawls HTTP response body for source files / links.
+- Shcheck
+  - Checks HTTP security headers (based on [shcheck](https://github.com/santoru/shcheck) by santoru).
+- Template
+  - Template for module development. 
+
+## Usage
+> ReconRaccoon.py {resolve,crawl,shcheck} -h
