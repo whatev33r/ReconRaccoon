@@ -48,9 +48,9 @@ if __name__ == "__main__":
         long_description=long_description,
         long_description_content_type="text/markdown",
         url="https://github.com/whatev33r/ReconRaccoon",
-        scripts=[
-            "ReconRaccoon/ReconRaccoon.py",
-        ],
+        entry_points={
+            "console_scripts": ["ReconRaccoon.ReconRaccoon"],
+        },
         install_requires=dependencies('requirements.txt'),
         python_requires='>=3'
     )
