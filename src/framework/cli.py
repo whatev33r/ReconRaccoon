@@ -22,11 +22,11 @@ current_time = now.strftime("%H:%M:%S")
 current_date = now.strftime("%D")
 
 # Banner
-racoon = rf'''┌───────────────────────────────────────────┐
+raccoon = rf'''┌───────────────────────────────────────────┐
 │ DT: {current_date}           ,,,                │
 │ TS: {current_time}        .'    `/\_/\          │
 │                   .'       <─I─>          │
 │        <((((((((((  )____(  \./           │
 │                   \( \(   \(\(            │
-│ {yellow}Recon{purple}Racoon{endc}        `-"`-"  " "            │
+│ {yellow}Recon{purple}Raccoon{endc}       `-"`-"  " "            │
 └───────────────────────────────────────────┘'''
