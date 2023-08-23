@@ -16,7 +16,7 @@ def main():
     # Parse modules
     modules = [f for f in os.listdir(f'{working_dir}/src/modules')]
     # Args
-    parser = argparse.ArgumentParser(prog='ReconRaccoon.py', description='Web Security Testing Framework', add_help=False)
+    parser = argparse.ArgumentParser(prog='reconraccoon.py', description='Web Security Testing Framework', add_help=False)
     parser.add_argument('module', choices=modules, nargs='?', help='')
     args, unknown = parser.parse_known_args()
     # Execute Module
