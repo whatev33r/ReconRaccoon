@@ -47,7 +47,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://github.com/whatev33r/ReconRaccoon",
         entry_points={
-            "console_scripts": ["ReconRaccoon = ReconRaccoon.ReconRaccoon:main"],
+            "console_scripts": ["ReconRaccoon=ReconRaccoon.ReconRaccoon:main"],
         },
         install_requires=required,
         python_requires='>=3'
