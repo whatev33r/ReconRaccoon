@@ -94,7 +94,7 @@ def request_target(target, timeout, headers, verbose, follow_redirect):
 
 # Init
 def __init__():
-    parser = argparse.ArgumentParser(prog='ReconRaccoon.py shcheck', description='Shcheck Module')
+    parser = argparse.ArgumentParser(prog='reconraccoon.py shcheck', description='Shcheck Module')
     parser.add_argument('-t', '--target', dest='target', type=str, required=True, help='Target URLs or IPs (str/file)')
     parser.add_argument('-r', '--request-timeout', dest='timeout', type=float, default=1.0, help='Timeout for all http requests (default=1.0)')
     parser.add_argument('-a', '--active-threads', dest='threads', type=int, default=30, help='Threads for all http requests (default=30)')
