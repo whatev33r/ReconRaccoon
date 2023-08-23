@@ -49,7 +49,7 @@ def crawl(target, timeout, headers, verbose, follow_redirect, regex):
 
 # Init
 def __init__():
-    parser = argparse.ArgumentParser(prog='ReconRacoon.py crawl', description='Crawl Module')
+    parser = argparse.ArgumentParser(prog='ReconRaccoon.py crawl', description='Crawl Module')
     parser.add_argument('-t', '--target', dest='target', type=str, required=True, help='Target URLs or IPs (str/file)')
     parser.add_argument('-c', '--custom-regex', dest='regex', type=str, default=r'''(?:href|src|action)=([^\s]*[\"|'])''', help=r'''Crawl request body for custom regex  (default="(?:href|src|action)=([^\s]*[\"|'])")''')
     parser.add_argument('-r', '--request-timeout', dest='timeout', type=float, default=1.0, help='Timeout for all http requests (default=1.0)')
