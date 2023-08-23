@@ -8,14 +8,14 @@ import os
 from src.framework import cli
 
 # Print banner
-print(cli.racoon)
+print(cli.raccoon)
 # Get working dir
 working_dir = os.path.dirname(os.path.realpath(__file__))
 # Parse modules
 modules = [f for f in os.listdir(f'{working_dir}/src/modules')]
 
 # Args
-parser = argparse.ArgumentParser(prog='ReconRacoon.py', description='Web Security Testing Framework', add_help=False)
+parser = argparse.ArgumentParser(prog='ReconRaccoon.py', description='Web Security Testing Framework', add_help=False)
 parser.add_argument('module', choices=modules, nargs='?', help='')
 parser.add_argument('-s', '--setup', choices=modules, help='')
 args, unknown = parser.parse_known_args()
