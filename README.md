@@ -23,10 +23,21 @@ options:
   -s {module}, --setup {module}
 ```
 
-## Install Package
+## Installation
+### PyPi
 ```
 pip install ReconRaccoon
 ```
+
+### From Source
+```
+pip install -r requirements.txt
+cd ReconRaccon
+python3 ReconRaccoon.py
+```
+
+## Usage
+> ReconRaccoon.py {resolve,crawl,shcheck} -h
 
 ## Current Modules
 - Resolve
@@ -37,6 +48,3 @@ pip install ReconRaccoon
   - Checks HTTP security headers (based on [shcheck](https://github.com/santoru/shcheck) by santoru).
 - Template
   - Template for module development. 
-
-## Usage
-> ReconRaccoon.py {resolve,crawl,shcheck} -h
