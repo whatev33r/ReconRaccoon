@@ -33,10 +33,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 
-def parse_requirements(filename):
-    """Load requirements from a pip requirements file."""
-    lineiter = (line.strip() for line in open(filename))
-    return [line for line in lineiter if line and not line.startswith("#")]
+def dependencies(imported_file):
+    """ __Doc__ Handles dependencies """
+    with open(imported_file) as file:
+        return file.read().splitlines()
 
 
 if __name__ == "__main__":
