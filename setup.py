@@ -27,5 +27,6 @@ if __name__ == "__main__":
         scripts=[
             "ReconRaccoon/ReconRaccoon.py",
         ],
+        install_requires=dependencies('requirements.txt'),
         python_requires='>=3'
     )
