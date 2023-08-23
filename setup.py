@@ -25,7 +25,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://github.com/whatev33r/ReconRaccoon",
         scripts=[
-            "ReconRaccoon.py",
+            "ReconRaccoon/ReconRaccoon.py",
         ],
         python_requires='>=3'
     )
