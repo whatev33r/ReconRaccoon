@@ -24,6 +24,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
 from setuptools import setup
 
 PACKAGE_NAME = "ReconRaccoon"
@@ -32,11 +33,8 @@ VERSION = "1.0.3"
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-
-def dependencies(imported_file):
-    """ __Doc__ Handles dependencies """
-    with open(imported_file) as file:
-        return file.read().splitlines()
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
 
 
 if __name__ == "__main__":
@@ -51,6 +49,6 @@ if __name__ == "__main__":
         entry_points={
             "console_scripts": ["ReconRaccoon = ReconRaccoon.ReconRaccoon"],
         },
-        install_requires=dependencies('requirements.txt'),
+        install_requires=required,
         python_requires='>=3'
     )
