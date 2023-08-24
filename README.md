@@ -32,12 +32,11 @@ pip install ReconRaccoon
 ### From Source
 ```
 pip install -r requirements.txt
-cd ReconRaccon
-python3 ReconRaccoon.py
+python3 reconraccoon.py
 ```
 
 ## Usage
-> ReconRaccoon.py {resolve,crawl,shcheck} -h
+> reconraccoon.py {resolve,crawl,shcheck} -h
 
 ## Current Modules
 - Resolve
