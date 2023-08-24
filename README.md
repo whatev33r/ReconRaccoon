@@ -1,7 +1,7 @@
 ![Supported Python versions](https://img.shields.io/badge/python-3.7+-blue.svg)
 
 # ReconRaccoon 1.0.5
-Just some 1337 Racoon digging through other people's trash cans.
+Just some 1337 Raccoon digging through other people's trash cans.
 
 ```
 ┌───────────────────────────────────────────┐
@@ -12,7 +12,7 @@ Just some 1337 Racoon digging through other people's trash cans.
 │                   \( \(   \(\(            │
 │ ReconRaccoon       `-"`-"  " "            │
 └───────────────────────────────────────────┘
-usage: ReconRaccoon.py [-s {module}] [{module}]
+usage: reconraccoon.py [-s {module}] [{module}]
 
 Web Security Testing Framework
 
@@ -26,7 +26,7 @@ options:
 ## Installation
 ### PyPi
 ```
-pip install ReconRaccoon
+pip install reconraccoon
 ```
 
 ### From Source
