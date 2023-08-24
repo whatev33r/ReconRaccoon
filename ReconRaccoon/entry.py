@@ -14,7 +14,7 @@ def main():
     # Get working dir
     working_dir = os.path.dirname(os.path.realpath(__file__))
     # Parse modules
-    modules = [f for f in os.listdir(f'{working_dir}/src/modules')]
+    modules = [f for f in next(os.walk(f'{working_dir}/src/modules'))[1]]
     # Args
     parser = argparse.ArgumentParser(prog='reconraccoon.py', description='Web Security Testing Framework', add_help=False)
     parser.add_argument('module', choices=modules, nargs='?', help='')
