@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-from ReconRaccoon.src.framework import cli
-from ReconRaccoon.src.framework import functions
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import urllib3
-from concurrent.futures import ThreadPoolExecutor
+
+from ReconRaccoon.src.framework import cli, functions
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
+
 
 def request_target(
     target, timeout, headers, verbose, include_filter, exclude_filter, follow_redirect

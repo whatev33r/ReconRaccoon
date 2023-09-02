@@ -8,10 +8,6 @@ repos:
     rev: 22.10.0
     hooks:
     -   id: black
--   repo: https://github.com/pre-commit/mirrors-flake8
-    rev: v4.0.0
-    hooks:
-    -   id: flake8
 -   repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.9.3
     hooks:

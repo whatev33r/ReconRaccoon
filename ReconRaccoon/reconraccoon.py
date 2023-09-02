@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import re
 import sys
+
 from ReconRaccoon.entry import main
 
 if __name__ == "__main__":

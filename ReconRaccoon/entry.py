@@ -2,20 +2,17 @@
 # -*- coding: utf-8 -*-
 import argparse
 import importlib
-import sys
-import subprocess
 import os
+
 from ReconRaccoon.src.framework import cli
 
 
 def main():
-    # Print banner
     print(cli.raccoon)
-    # Get working dir
+
     working_dir = os.path.dirname(os.path.realpath(__file__))
-    # Parse modules
     modules = [f for f in next(os.walk(f"{working_dir}/src/modules"))[1]]
-    # Args
+
     parser = argparse.ArgumentParser(
         prog="reconraccoon.py",
         description="Web Security Testing Framework",
@@ -23,7 +20,7 @@ def main():
     )
     parser.add_argument("module", choices=modules, nargs="?", help="")
     args, unknown = parser.parse_known_args()
-    # Execute Module
+
     try:
         if args.module:
             print(f"{cli.green}[+]{cli.endc} Executing: {args.module}")
