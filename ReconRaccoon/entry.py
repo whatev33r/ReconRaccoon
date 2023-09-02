@@ -28,7 +28,8 @@ def main():
         if args.module:
             print(f"{cli.green}[+]{cli.endc} Executing: {args.module}")
             init = getattr(
-                importlib.import_module(f"ReconRaccoon.src.modules.{args.module}.main"), "__init__"
+                importlib.import_module(f"ReconRaccoon.src.modules.{args.module}.main"),
+                "__init__",
             )
             init()
         else:
