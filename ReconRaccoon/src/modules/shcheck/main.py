@@ -4,17 +4,14 @@ import argparse
 from ReconRaccoon.src.framework import cli
 from ReconRaccoon.src.framework import functions
 
-# Custom Imports
 import requests
 import urllib3
 from concurrent.futures import ThreadPoolExecutor
 import json
 
-# Disable Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
-# Security headers that should be enabled
 sec_headers = [
     "X-XSS-Protection",
     "X-Frame-Options",

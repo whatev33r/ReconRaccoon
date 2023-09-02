@@ -4,17 +4,13 @@ import argparse
 from ReconRaccoon.src.framework import cli
 from ReconRaccoon.src.framework import functions
 
-# Custom Imports
 import requests
 import urllib3
 from concurrent.futures import ThreadPoolExecutor
 
-# Disable Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
-
-# Enumerate Host
 def request_target(
     target, timeout, headers, verbose, include_filter, exclude_filter, follow_redirect
 ):
@@ -41,13 +37,11 @@ def request_target(
         return None
 
 
-# Filter and output
 def filter_out(req, exclude, include):
     if "server" in req.headers:
         srv = f"({req.headers['server']})"
     else:
         srv = ""
-    # Include
     if include is not None:
         if include == "INFO" and req.status_code in range(100, 199):
             print(
@@ -71,7 +65,6 @@ def filter_out(req, exclude, include):
             )
         else:
             pass
-    # Exclude
     if include is None:
         if req.status_code in range(100, 199) and exclude != "INFO":
             print(
@@ -97,7 +90,6 @@ def filter_out(req, exclude, include):
             pass
 
 
-# Init
 def __init__():
     parser = argparse.ArgumentParser(
         prog="reconraccoon.py resolve", description="Resolve Module"
@@ -166,15 +158,11 @@ def __init__():
         help="Display verbose output (timeouts/errors)",
     )
     args, sysargs = parser.parse_known_args()
-    # Call main function
     main(args)
 
 
-# Main
 def main(args):
-    # Prefix
     target = functions.check_prefix(args.target, args.common_ports)
-    # Crawl
     try:
         threads = []
         with ThreadPoolExecutor(max_workers=args.threads) as executor:

@@ -4,18 +4,15 @@ import argparse
 from ReconRaccoon.src.framework import cli
 from ReconRaccoon.src.framework import functions
 
-# Custom imports
 import re
 import urllib3
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
-# Disable Warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
 
-# Crawl
 def crawl(target, timeout, headers, verbose, follow_redirect, regex):
     sesh = requests.session()
     sesh.keep_alive = False
@@ -65,8 +62,6 @@ def crawl(target, timeout, headers, verbose, follow_redirect, regex):
             print(f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}{E}{cli.endc}]")
         return None
 
-
-# Init
 def __init__():
     parser = argparse.ArgumentParser(
         prog="reconraccoon.py crawl", description="Crawl Module"
@@ -121,14 +116,11 @@ def __init__():
         help="Display verbose output (timeouts/errors)",
     )
     args, sysargs = parser.parse_known_args()
-    # Call main function
     main(args)
 
 
-# Main
 def main(args):
     print(f"{cli.blue}[*]{cli.endc} Regex: {args.regex}")
-    # Prefix
     target = functions.check_prefix(args.target, None)
     try:
         threads = []

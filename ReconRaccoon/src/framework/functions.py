@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-# Common http ports
 ports = [
     66,
     80,
@@ -42,7 +41,6 @@ ports = [
 ]
 
 
-# Check prefix
 def check_prefix(target, common_ports):
     trgt = []
     if os.path.isfile(target) is True:
