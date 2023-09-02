@@ -14,23 +14,29 @@ def main():
     # Get working dir
     working_dir = os.path.dirname(os.path.realpath(__file__))
     # Parse modules
-    modules = [f for f in next(os.walk(f'{working_dir}/src/modules'))[1]]
+    modules = [f for f in next(os.walk(f"{working_dir}/src/modules"))[1]]
     # Args
-    parser = argparse.ArgumentParser(prog='reconraccoon.py', description='Web Security Testing Framework', add_help=False)
-    parser.add_argument('module', choices=modules, nargs='?', help='')
+    parser = argparse.ArgumentParser(
+        prog="reconraccoon.py",
+        description="Web Security Testing Framework",
+        add_help=False,
+    )
+    parser.add_argument("module", choices=modules, nargs="?", help="")
     args, unknown = parser.parse_known_args()
     # Execute Module
     try:
         if args.module:
             print(f"{cli.green}[+]{cli.endc} Executing: {args.module}")
-            init = getattr(importlib.import_module(f'src.modules.{args.module}.main'), '__init__')
+            init = getattr(
+                importlib.import_module(f"src.modules.{args.module}.main"), "__init__"
+            )
             init()
         else:
             parser.print_help()
     except Exception as E:
-        exit(f'{cli.red}[x]{cli.endc} Error: {E}')
+        exit(f"{cli.red}[x]{cli.endc} Error: {E}")
 
 
 # Main
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

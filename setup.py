@@ -33,7 +33,7 @@ VERSION = "1.0.5"
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 
@@ -50,5 +50,5 @@ if __name__ == "__main__":
             "console_scripts": ["ReconRaccoon=ReconRaccoon.reconraccoon:main"],
         },
         install_requires=required,
-        python_requires='>=3'
+        python_requires=">=3",
     )

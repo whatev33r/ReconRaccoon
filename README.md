@@ -40,10 +40,10 @@ python3 reconraccoon.py
 
 ## Current Modules
 - Resolve
-  - Resolves targets to get overview of initial HTTP response codes. 
+  - Resolves targets to get overview of initial HTTP response codes.
 - Crawl
   - Crawls HTTP response body for source files / links.
 - Shcheck
   - Checks HTTP security headers (based on [shcheck](https://github.com/santoru/shcheck) by santoru).
 - Template
-  - Template for module development. 
+  - Template for module development.
