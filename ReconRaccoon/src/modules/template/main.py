@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-from .src.framework import cli
-from .src.framework import functions
+from ReconRaccoon.src.framework import cli
+from ReconRaccoon.src.framework import functions
 
 
 # Init
 def __init__():
-    parser = argparse.ArgumentParser(prog='reconraccoon.py template', description='Module for TEMPLATE')
-    parser.add_argument('-t', '--target', required=True)
+    parser = argparse.ArgumentParser(
+        prog="reconraccoon.py template", description="Module for TEMPLATE"
+    )
+    parser.add_argument("-t", "--target", required=True)
     args, sysargs = parser.parse_known_args()
     # Call main function
     main(args)
