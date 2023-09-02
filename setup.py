@@ -28,7 +28,7 @@ import os
 from setuptools import setup
 
 PACKAGE_NAME = "ReconRaccoon"
-VERSION = "1.0.5"
+VERSION = "1.0.7"
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://github.com/whatev33r/ReconRaccoon",
         entry_points={
-            "console_scripts": ["ReconRaccoon=ReconRaccoon.reconraccoon:main"],
+            "console_scripts": ["reconraccoon=ReconRaccoon.reconraccoon:main"],
         },
         install_requires=required,
         python_requires=">=3",
