@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-from .src.framework import cli
-from .src.framework import functions
+from src.framework import cli
+from src.framework import functions
 # Custom Imports
 import requests
 import urllib3

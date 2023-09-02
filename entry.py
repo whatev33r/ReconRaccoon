@@ -5,7 +5,7 @@ import importlib
 import sys
 import subprocess
 import os
-from .src.framework import cli
+from src.framework import cli
 
 
 def main():
