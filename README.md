@@ -1,6 +1,6 @@
 ![Supported Python versions](https://img.shields.io/badge/python-3.7+-blue.svg)
 
-# ReconRaccoon 1.0.5
+# ReconRaccoon 1.1.0
 Just some 1337 Raccoon digging through other people's trash cans.
 
 ```
