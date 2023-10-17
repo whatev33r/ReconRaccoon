@@ -59,6 +59,30 @@ def request_target(target, timeout, headers, verbose, follow_redirect):
             print(
                 f"{cli.green}SUCCESS{cli.endc} - {r.url} [{cli.green}{r.status_code}{cli.endc}]"
             )
+            for head in information_headers:
+                resp = r.headers.get(head)
+                if resp:
+                    print(f"├─{cli.blue}[~]{cli.endc} {head}: {resp}")
+            for head in sec_headers:
+                resp = r.headers.get(head)
+                if resp:
+                    print(
+                        f"├─{cli.green}[+]{cli.endc} Header {cli.green}{head}{cli.endc} is present! (Value: {resp})"
+                    )
+                else:
+                    print(
+                        f"├─{cli.yellow}[!]{cli.endc} Missing security header: {cli.yellow}{head}{cli.endc}"
+                    )
+                    missing_sec_headers.append(head)
+            for head in cache_headers:
+                resp = r.headers.get(head)
+                if resp:
+                    print(
+                        f"├─{cli.white}[*]{cli.endc} Cache control header {cli.white}{head}{cli.endc} is present! (Value: {resp})"
+                    )
+            print(
+                f"└─ Missing {cli.bold}{len(missing_sec_headers)}{cli.endc} security headers...\n"
+            )        
         elif r.status_code in range(300, 399):
             print(
                 f'{cli.yellow}REDIRECTION{cli.endc} - {r.url} [{cli.yellow}{r.status_code}{cli.endc}] {cli.yellow}→{cli.endc} {r.headers["location"]}'
@@ -73,30 +97,6 @@ def request_target(target, timeout, headers, verbose, follow_redirect):
             )
         else:
             pass
-        for head in information_headers:
-            resp = r.headers.get(head)
-            if resp:
-                print(f"├─{cli.blue}[~]{cli.endc} {head}: {resp}")
-        for head in sec_headers:
-            resp = r.headers.get(head)
-            if resp:
-                print(
-                    f"├─{cli.green}[+]{cli.endc} Header {cli.green}{head}{cli.endc} is present! (Value: {resp})"
-                )
-            else:
-                print(
-                    f"├─{cli.yellow}[!]{cli.endc} Missing security header: {cli.yellow}{head}{cli.endc}"
-                )
-                missing_sec_headers.append(head)
-        for head in cache_headers:
-            resp = r.headers.get(head)
-            if resp:
-                print(
-                    f"├─{cli.white}[*]{cli.endc} Cache control header {cli.white}{head}{cli.endc} is present! (Value: {resp})"
-                )
-        print(
-            f"└─ Missing {cli.bold}{len(missing_sec_headers)}{cli.endc} security headers...\n"
-        )
     except requests.exceptions.ConnectTimeout:
         if verbose is True:
             print(
