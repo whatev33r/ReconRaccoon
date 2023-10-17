@@ -12,6 +12,8 @@ def main():
 
     working_dir = os.path.dirname(os.path.realpath(__file__))
     modules = [f for f in next(os.walk(f"{working_dir}/src/modules"))[1]]
+    if "template" in modules:
+        modules.remove("template")
     if "__pycache__" in modules:
         modules.remove("__pycache__")
 
