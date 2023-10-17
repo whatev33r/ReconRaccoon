@@ -57,7 +57,7 @@ def main(args):
             else:
                 pass
         except Exception as E:
-            if verbose is True:
+            if args.verbose is True:
                 rprint(f'\r[-] Hostname: {dns}\t Response: {E}')
             else:
                 pass
