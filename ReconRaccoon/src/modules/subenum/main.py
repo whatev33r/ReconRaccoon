@@ -44,21 +44,21 @@ def main(args):
     new = list(dict.fromkeys(new))
     new = [x.lower() for x in new]
     wildcard = socket.gethostbyname(target)
-    print(f'\r[$] Wildcard: *.{target}\t IP: {wildcard}')
+    print(f'\r{cli.blue}[$]{cli.endc} Wildcard: {cli.blue}*{cli.endc}.{cli.bold}{target}{cli.endc}\t IP: {wildcard}')
     # Main Loop
     for subdom in new:
         try:
             dns = f'{subdom}.{target}'
             ip = socket.gethostbyname(dns)
             if ip != wildcard:
-                print(f'\r][+] Hostname: {subdom}.{target}\t IP: {ip}')
+                print(f'\r{cli.green}[+]{cli.endc} Hostname: {subdom}.{target}\t IP: {ip}')
                 ips.append(ip)
                 subs.append(f'{subdom}.{target}')
             else:
                 pass
         except Exception as E:
             if args.verbose is True:
-                print(f'\r[-] Hostname: {dns}\t Response: {E}')
+                print(f'\r{cli.red}[-]{cli.endc} Hostname: {dns}\t Response: {E}')
             else:
                 pass
     # Generate Out Files
