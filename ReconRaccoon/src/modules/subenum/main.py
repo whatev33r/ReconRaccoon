@@ -51,14 +51,14 @@ def main(args):
             dns = f'{subdom}.{target}'
             ip = socket.gethostbyname(dns)
             if ip != wildcard:
-                rprint(f'\r][+] Hostname: {subdom}.{target}\t IP: {ip}')
+                print(f'\r][+] Hostname: {subdom}.{target}\t IP: {ip}')
                 ips.append(ip)
                 subs.append(f'{subdom}.{target}')
             else:
                 pass
         except Exception as E:
             if args.verbose is True:
-                rprint(f'\r[-] Hostname: {dns}\t Response: {E}')
+                print(f'\r[-] Hostname: {dns}\t Response: {E}')
             else:
                 pass
     # Generate Out Files
