@@ -38,6 +38,8 @@ def main(args):
     ips = []
     subs = []
     # Filter Wordlist
+    f = open(args.wordlist)
+    lst = f.readlines()
     new = list(map(str.strip, lst))
     new = list(dict.fromkeys(new))
     new = [x.lower() for x in new]
