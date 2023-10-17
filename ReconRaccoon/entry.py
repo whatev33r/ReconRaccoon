@@ -12,6 +12,7 @@ def main():
 
     working_dir = os.path.dirname(os.path.realpath(__file__))
     modules = [f for f in next(os.walk(f"{working_dir}/src/modules"))[1]]
+    modules.remove("__pycache__")
 
     parser = argparse.ArgumentParser(
         prog="reconraccoon.py",
