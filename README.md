@@ -1,4 +1,5 @@
 ![Supported Python versions](https://img.shields.io/badge/python-3.7+-blue.svg)
+[![ReconRaccoon-CI](https://github.com/whatev33r/ReconRaccoon/actions/workflows/reconraccoon.yml/badge.svg)](https://github.com/whatev33r/ReconRaccoon/actions/workflows/reconraccoon.yml)
 
 # ReconRaccoon 1.1.0
 Just some 1337 Raccoon digging through other people's trash cans.
