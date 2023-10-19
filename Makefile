@@ -14,6 +14,12 @@ help: ## Get help for Makefile
 docker-build: ## Build docker image
 	docker build -t $(NAME) .
 
+install-dev: ## Install development dependencies
+	@$(PIP) install -r requirements-dev.txt
+
+docker-test: ## Run tests in docker container
+	docker run --network=host --privileged -it $(NAME) make install-dev test
+
 docker-sh: ## Shell into docker container
 	docker run --network=host --privileged -it $(NAME) bash
 
