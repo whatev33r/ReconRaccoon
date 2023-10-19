@@ -20,4 +20,7 @@ docker-sh: ## Shell into docker container
 docker-remove: ## Remove docker container
 	@docker container rm $(NAME)
 
+test: ## Run tests
+	@$(PYTHON) -m pytest tests/
+
 .PHONY: help docker-build docker-sh docker-remove
