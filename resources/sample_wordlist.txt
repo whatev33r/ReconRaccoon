@@ -1,0 +1,14 @@
+www
+blog
+mail
+dev
+test
+admin
+api
+app
+login
+ftp
+support
+forum
+shop
+demo
