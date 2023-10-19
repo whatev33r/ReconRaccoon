@@ -18,7 +18,7 @@ install-dev: ## Install development dependencies
 	@$(PIP) install -r requirements-dev.txt
 
 docker-test: ## Run tests in docker container
-	docker run --network=host --privileged -it $(NAME) make install-dev test
+	docker run --network=host --privileged --rm $(NAME) make install-dev test
 
 docker-sh: ## Shell into docker container
 	docker run --network=host --privileged -it $(NAME) bash
