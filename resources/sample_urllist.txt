@@ -1,0 +1,3 @@
+http://example1.com
+https://example2.com
+example3.com

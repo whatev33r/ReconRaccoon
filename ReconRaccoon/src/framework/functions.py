@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-ports = [
+common_ports = [
     66,
     80,
     81,
@@ -41,39 +41,27 @@ ports = [
 ]
 
 
-def check_prefix(target, common_ports):
-    trgt = []
-    if os.path.isfile(target) is True:
-        with open(target) as file:
-            check = [x.strip() for x in file.readlines()]
-            for url in check:
-                if url.startswith("https://") or url.startswith("http://"):
-                    if common_ports:
-                        for port in ports:
-                            trgt.append(f"{url}:{port}")
-                    else:
-                        trgt.append(url)
-                else:
-                    if common_ports:
-                        for port in ports:
-                            trgt.append(f"http://{url}:{port}")
-                            trgt.append(f"https://{url}:{port}")
-                    else:
-                        trgt.append(f"http://{url}")
-                        trgt.append(f"https://{url}")
+def process_single_url(url: str, use_common_ports: bool):
+    ports = common_ports if use_common_ports else []
+
+    if url.startswith(("http://", "https://")):
+        return [f"{url}:{port}" for port in ports] or [url]
+
+    return [
+        f"http://{url}:{port}" for port in ports
+    ] + [
+        f"https://{url}:{port}" for port in ports
+    ] or [f"http://{url}", f"https://{url}"]
+
+
+def process_file(file_path: str, use_common_ports: bool):
+    with open(file_path) as file:
+        urls = [x.strip() for x in file.readlines()]
+        return [url for u in urls for url in process_single_url(u, use_common_ports)]
+
+
+def check_prefix(target: str, use_common_ports: bool):
+    if os.path.isfile(target):
+        return process_file(target, use_common_ports)
     else:
-        if target.startswith("https://") or target.startswith("http://"):
-            if common_ports:
-                for port in ports:
-                    trgt.append(f"{target}:{port}")
-            else:
-                trgt.append(target)
-        else:
-            if common_ports:
-                for port in ports:
-                    trgt.append(f"http://{target}:{port}")
-                    trgt.append(f"https://{target}:{port}")
-            else:
-                trgt.append(f"http://{target}")
-                trgt.append(f"https://{target}")
-    return trgt
+        return process_single_url(target, use_common_ports)
