@@ -13,6 +13,8 @@ from ReconRaccoon.src.framework import cli, functions
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
+DEFAULT_REGEX = r'\b(?:https?://|http?://|www\.)[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&//=]*)?'
+
 
 def get_response(target, timeout, headers, verbose, follow_redirect) -> Union[requests.Response, None]:
     sesh = requests.session()
@@ -93,7 +95,7 @@ def __init__():
         "--custom-regex",
         dest="regex",
         type=str,
-        default=r"""(?:href|src|action)=([^\s]*[\"|'])""",
+        default=DEFAULT_REGEX,
         help=r"""Crawl request body for custom regex  (default="(?:href|src|action)=([^\s]*[\"|'])")""",
     )
     parser.add_argument(
