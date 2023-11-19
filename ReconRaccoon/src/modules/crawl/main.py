@@ -41,7 +41,7 @@ def get_response(target, timeout, headers, verbose, follow_redirect) -> Union[re
         return None
 
 
-def extract_matches(response: requests.Response, regex: re.Pattern):
+def extract_links_from_html(response: requests.Response, regex: re.Pattern):
     body = response.content.decode("utf-8")
     return re.findall(regex, body, re.I)
 
@@ -69,13 +69,22 @@ def check_status_code(response: requests.Response):
         )
 
 
-def crawl(target, timeout, headers, verbose, follow_redirect, regex):
+def crawl(target, timeout, headers, verbose, follow_redirect, regex, depth=1, current_depth=1):
+    if depth != 0 and current_depth > depth:
+        return
+
     response = get_response(target, timeout, headers, verbose, follow_redirect)
-    check_status_code(response)
-    matches = extract_matches(response, regex)
-    for x in matches:
-        print(f"├─[{cli.green}{x}{cli.endc}]")
-    print(f"└─ Fetched {cli.bold}{len(matches)}{cli.endc} paths...")
+    if response is not None:
+        check_status_code(response)
+        links = extract_links_from_html(response, regex)
+        for link in links:
+            print(f"├─[{cli.green}{link}{cli.endc}]")
+        print(f"└─ Fetched {cli.bold}{len(links)}{cli.endc} paths at depth {current_depth} for {cli.bold}{target}{cli.endc}")
+
+        if depth == 0 or current_depth < depth:
+            links = extract_links_from_html(response, regex)
+            for link in links:
+                crawl(link, timeout, headers, verbose, follow_redirect, regex, depth, current_depth + 1)
 
 
 def __init__():
@@ -131,12 +140,20 @@ def __init__():
         action="store_true",
         help="Display verbose output (timeouts/errors)",
     )
+    parser.add_argument(
+        "-d",
+        "--depth",
+        dest="depth",
+        type=int,
+        default=1,
+        help="Depth for crawling (default=1, 0 for unlimited)",
+    )
     args, sysargs = parser.parse_known_args()
     main(args)
 
 
 def main(args):
-    print(f"{cli.blue}[*]{cli.endc} Regex: {args.regex}")
+    print(f"{cli.blue}[*]{cli.endc} Regex: {args.regex}, Depth: {args.depth}")
     target = functions.check_prefix(args.target, None)
     try:
         threads = []
@@ -151,6 +168,7 @@ def main(args):
                         verbose=args.verbose,
                         follow_redirect=args.follow_redirects,
                         regex=args.regex,
+                        depth=args.depth,
                     )
                 )
     except KeyboardInterrupt:
