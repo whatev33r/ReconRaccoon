@@ -3,6 +3,7 @@
 import argparse
 import re
 from concurrent.futures import ThreadPoolExecutor
+from typing import Union
 
 import requests
 import urllib3
@@ -13,54 +14,66 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
 
-def crawl(target, timeout, headers, verbose, follow_redirect, regex):
+def get_response(target, timeout, headers, verbose, follow_redirect) -> Union[requests.Response, None]:
     sesh = requests.session()
     sesh.keep_alive = False
     try:
-        r = sesh.get(
+        response = sesh.get(
             target,
             allow_redirects=follow_redirect,
             verify=False,
             timeout=timeout,
             headers=headers,
         )
-        body = r.content.decode("utf-8")
-        match = re.findall(regex, body, re.I)
-        if r.status_code in range(100, 199):
-            print(
-                f"{cli.blue}INFO{cli.endc} - {r.url} [{cli.blue}{r.status_code}{cli.endc}]"
-            )
-        elif r.status_code in range(200, 299):
-            print(
-                f"{cli.green}SUCCESS{cli.endc} - {r.url} [{cli.green}{r.status_code}{cli.endc}]"
-            )
-        elif r.status_code in range(300, 399):
-            print(
-                f'{cli.yellow}REDIRECTION{cli.endc} - {r.url} [{cli.yellow}{r.status_code}{cli.endc}] {cli.yellow}→{cli.endc} {r.headers["location"]}'
-            )
-        elif r.status_code in range(400, 499):
-            print(
-                f"{cli.purple}CLIENT_ERROR{cli.endc} - {r.url} [{cli.purple}{r.status_code}{cli.endc}]"
-            )
-        elif r.status_code in range(500, 599):
-            print(
-                f"{cli.red}SERVER_ERROR{cli.endc} - {r.url} [{cli.red}{r.status_code}{cli.endc}]"
-            )
-        else:
-            pass
-        for x in match:
-            print(f"├─[{cli.green}{x}{cli.endc}]")
-        print(f"└─ Fetched {cli.bold}{len(match)}{cli.endc} paths...")
+        return response
     except requests.exceptions.ConnectTimeout:
-        if verbose is True:
+        if verbose:
             print(
                 f"{cli.red}TIMEOUT{cli.endc} - {target} [{cli.red}after {timeout}/s {cli.endc}]"
             )
         return None
-    except Exception as E:
-        if verbose is True:
-            print(f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}{E}{cli.endc}]")
+    except Exception as e:
+        if verbose:
+            print(
+                f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}{e}{cli.endc}]")
         return None
+
+
+def extract_matches(response: requests.Response, regex: re.Pattern):
+    body = response.content.decode("utf-8")
+    return re.findall(regex, body, re.I)
+
+
+def check_status_code(response: requests.Response):
+    if response.status_code in range(100, 199):
+        print(
+            f"{cli.blue}INFO{cli.endc} - {response.url} [{cli.blue}{response.status_code}{cli.endc}]"
+        )
+    elif response.status_code in range(200, 299):
+        print(
+            f"{cli.green}SUCCESS{cli.endc} - {response.url} [{cli.green}{response.status_code}{cli.endc}]"
+        )
+    elif response.status_code in range(300, 399):
+        print(
+            f'{cli.yellow}REDIRECTION{cli.endc} - {response.url} [{cli.yellow}{response.status_code}{cli.endc}] {cli.yellow}→{cli.endc} {response.headers["location"]}'
+        )
+    elif response.status_code in range(400, 499):
+        print(
+            f"{cli.purple}CLIENT_ERROR{cli.endc} - {response.url} [{cli.purple}{response.status_code}{cli.endc}]"
+        )
+    elif response.status_code in range(500, 599):
+        print(
+            f"{cli.red}SERVER_ERROR{cli.endc} - {response.url} [{cli.red}{response.status_code}{cli.endc}]"
+        )
+
+
+def crawl(target, timeout, headers, verbose, follow_redirect, regex):
+    response = get_response(target, timeout, headers, verbose, follow_redirect)
+    check_status_code(response)
+    matches = extract_matches(response, regex)
+    for x in matches:
+        print(f"├─[{cli.green}{x}{cli.endc}]")
+    print(f"└─ Fetched {cli.bold}{len(matches)}{cli.endc} paths...")
 
 
 def __init__():
