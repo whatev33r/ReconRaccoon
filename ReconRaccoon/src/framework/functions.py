@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 import os
 
+from dotenv import dotenv_values
+import requests
+
+from ReconRaccoon.src.framework.aws_proxy_hob import AWSProxyHob
+
 common_ports = [
     66,
     80,
@@ -65,3 +70,16 @@ def check_prefix(target: str, use_common_ports: bool):
         return process_file(target, use_common_ports)
     else:
         return process_single_url(target, use_common_ports)
+
+
+def read_aws_credentials_from_env(filename):
+    env_vars = dotenv_values(filename)
+    aws_access_key_id = env_vars.get("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = env_vars.get("AWS_SECRET_ACCESS_KEY")
+    return aws_access_key_id, aws_secret_access_key
+
+
+def get_session(target):
+    if not AWSProxyHob.get_instance(None, None):
+        return requests.Session()
+    return AWSProxyHob.get_proxy_session(target)

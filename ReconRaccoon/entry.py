@@ -4,7 +4,8 @@ import argparse
 import importlib
 import os
 
-from ReconRaccoon.src.framework import cli
+from ReconRaccoon.src.framework import cli, functions
+from ReconRaccoon.src.framework.aws_proxy_hob import AWSProxyHob
 
 
 def main():
@@ -23,22 +24,37 @@ def main():
         add_help=False,
     )
     parser.add_argument("module", choices=modules, nargs="?", help="")
+    parser.add_argument("--aws-credentials", type=str, required=False, dest="aws_credentials",
+                        help="Path to file containing AWS credentials for proxy hopping")
     args, unknown = parser.parse_known_args()
 
     try:
+        use_proxies = False
+        if args.aws_credentials:
+            print(f"{cli.green}[+]{cli.endc} Setting up AWS Proxy hopping")
+            aws_access_key_id, aws_secret_key = functions.read_aws_credentials_from_env(
+                args.aws_credentials)
+            if aws_access_key_id is None or aws_secret_key is None:
+                print(
+                    f"{cli.red}[x]{cli.endc} Error: AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY not found in {args.aws_credentials}")
+                print(
+                    f"{cli.yellow}[x]{cli.endc} Continuing without AWS Proxy hopping")
+            else:
+                use_proxies = True
+                AWSProxyHob.set_credentials(aws_access_key_id, aws_secret_key)
+                print(f"{cli.green}[+]{cli.endc} AWS Proxy hopping enabled")
+
         if args.module:
             print(f"{cli.green}[+]{cli.endc} Executing: {args.module}")
-            init = getattr(
-                importlib.import_module(f"ReconRaccoon.src.modules.{args.module}.main"),
-                "__init__",
-            )
-            init()
+            module = importlib.import_module(
+                f"ReconRaccoon.src.modules.{args.module}.main")
+            setattr(module, "USE_PROXIES", use_proxies)
+            module.__init__()
         else:
             parser.print_help()
     except Exception as E:
         exit(f"{cli.red}[x]{cli.endc} Error: {E}")
 
 
-# Main
 if __name__ == "__main__":
     main()

@@ -14,6 +14,9 @@ help: ## Get help for Makefile
 docker-build: ## Build docker image
 	docker build -t $(NAME) .
 
+install: ## Install dependencies
+	@$(PIP) install -r requirements.txt
+
 install-dev: ## Install development dependencies
 	@$(PIP) install -r requirements-dev.txt
 

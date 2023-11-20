@@ -9,15 +9,21 @@ import requests
 import urllib3
 
 from ReconRaccoon.src.framework import cli, functions
+from ReconRaccoon.src.framework.aws_proxy_hob import AWSProxyHob
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
+USE_PROXIES = False
 DEFAULT_REGEX = r'\b(?:https?://|http?://|www\.)[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9@:%_\+.~#?&//=]*)?'
 
 
 def get_response(target, timeout, headers, verbose, follow_redirect) -> Union[requests.Response, None]:
-    sesh = requests.session()
+    if USE_PROXIES:
+        aws_proxy_hob = AWSProxyHob()
+        sesh = aws_proxy_hob.get_proxy_session(target)
+    else:
+        sesh = requests.Session()
     sesh.keep_alive = False
     try:
         response = sesh.get(
@@ -27,6 +33,9 @@ def get_response(target, timeout, headers, verbose, follow_redirect) -> Union[re
             timeout=timeout,
             headers=headers,
         )
+        # Important to shutdown the gateway after each request to avoid charges
+        if USE_PROXIES:
+            aws_proxy_hob.shutdown_api_gateway()
         return response
     except requests.exceptions.ConnectTimeout:
         if verbose:
@@ -79,12 +88,14 @@ def crawl(target, timeout, headers, verbose, follow_redirect, regex, depth=1, cu
         links = extract_links_from_html(response, regex)
         for link in links:
             print(f"├─[{cli.green}{link}{cli.endc}]")
-        print(f"└─ Fetched {cli.bold}{len(links)}{cli.endc} paths at depth {current_depth} for {cli.bold}{target}{cli.endc}")
+        print(
+            f"└─ Fetched {cli.bold}{len(links)}{cli.endc} paths at depth {current_depth} for {cli.bold}{target}{cli.endc}")
 
         if depth == 0 or current_depth < depth:
             links = extract_links_from_html(response, regex)
             for link in links:
-                crawl(link, timeout, headers, verbose, follow_redirect, regex, depth, current_depth + 1)
+                crawl(link, timeout, headers, verbose,
+                      follow_redirect, regex, depth, current_depth + 1)
 
 
 def __init__():
