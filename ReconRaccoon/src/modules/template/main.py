@@ -5,15 +5,21 @@ import argparse
 from ReconRaccoon.src.framework import cli, functions
 
 
+# Init
 def __init__():
     parser = argparse.ArgumentParser(
         prog="reconraccoon.py template", description="Module for TEMPLATE"
     )
-    parser.add_argument("-t", "--target", required=True)
+    parser.add_argument(
+        "-t", "--target",
+        required=True
+    )
+    # Call main function
     args, sysargs = parser.parse_known_args()
     main(args)
 
 
+# Main
 def main(args):
     print(cli.current_date)
     print(cli.current_time)

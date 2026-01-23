@@ -4,7 +4,6 @@ import argparse
 import re
 from concurrent.futures import ThreadPoolExecutor
 from typing import Union
-
 import requests
 import urllib3
 
@@ -98,71 +97,69 @@ def crawl(target, timeout, headers, verbose, follow_redirect, regex, depth=1, cu
                       follow_redirect, regex, depth, current_depth + 1)
 
 
+# Init
 def __init__():
     parser = argparse.ArgumentParser(
         prog="reconraccoon.py crawl", description="Crawl Module"
     )
     parser.add_argument(
-        "-t",
-        "--target",
+        "-t", "--target",
         dest="target",
         type=str,
         required=True,
         help="Target URLs or IPs (str/file)",
     )
     parser.add_argument(
-        "-c",
-        "--custom-regex",
+        "-c", "--custom-regex",
         dest="regex",
         type=str,
         default=DEFAULT_REGEX,
         help=r"""Crawl request body for custom regex  (default="(?:href|src|action)=([^\s]*[\"|'])")""",
     )
     parser.add_argument(
-        "-r",
-        "--request-timeout",
+        "-r", "--request-timeout",
         dest="timeout",
         type=float,
         default=1.0,
         help="Timeout for all http requests (default=1.0)",
     )
     parser.add_argument(
-        "-a",
-        "--active-threads",
+        "-a", "--active-threads",
         dest="threads",
         type=int,
         default=20,
         help="Threads for all http requests (default=20)",
     )
     parser.add_argument(
-        "-u",
-        "--user-agent",
+        "-u", "--user-agent",
         dest="user_agent",
         default="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
         type=str,
         help="Use custom user agent",
     )
     parser.add_argument(
-        "-f", "--follow-redirects", action="store_true", help="Follow redirects"
+        "-f", "--follow-redirects",
+        action="store_true",
+        help="Follow redirects"
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
+        "-v", "--verbose",
         action="store_true",
         help="Display verbose output (timeouts/errors)",
     )
     parser.add_argument(
-        "-d",
-        "--depth",
+        "-d", "--depth",
         dest="depth",
         type=int,
         default=1,
         help="Depth for crawling (default=1, 0 for unlimited)",
     )
+    # Call main function
     args, sysargs = parser.parse_known_args()
     main(args)
 
 
+# Main
 def main(args):
     print(f"{cli.blue}[*]{cli.endc} Regex: {args.regex}, Depth: {args.depth}")
     target = functions.check_prefix(args.target, None)

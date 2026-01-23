@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-from concurrent.futures import ThreadPoolExecutor
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 import requests
 import urllib3
 
@@ -11,7 +11,8 @@ from ReconRaccoon.src.framework import cli, functions
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
-sec_headers = [
+
+SEC_HEADERS = [
     "X-XSS-Protection",
     "X-Frame-Options",
     "X-Content-Type-Options",
@@ -26,159 +27,177 @@ sec_headers = [
     "Cross-Origin-Opener-Policy",
 ]
 
-information_headers = [
+INFO_HEADERS = [
     "X-Powered-By",
     "Server",
     "X-AspNet-Version",
     "X-AspNetMvc-Version",
 ]
 
-cache_headers = ["Cache-Control", "Pragma", "Last-Modified" "Expires", "ETag"]
+CACHE_HEADERS = [
+    "Cache-Control",
+    "Pragma",
+    "Last-Modified",
+    "Expires",
+    "ETag",
+]
 
 
-# Enumerate Host
-def request_target(target, timeout, headers, verbose, follow_redirect):
-    # Lists
-    missing_sec_headers = []
-    # Request sesh
-    sesh = requests.session()
-    sesh.keep_alive = False
-    try:
-        r = sesh.get(
-            target,
-            allow_redirects=follow_redirect,
-            verify=False,
-            timeout=timeout,
-            headers=headers,
-        )
-        if r.status_code in range(100, 199):
-            print(
-                f"{cli.blue}INFO{cli.endc} - {r.url} [{cli.blue}{r.status_code}{cli.endc}]"
+# Class for HTTP checks
+class ShcheckWorker:
+    def __init__(self, timeout, headers, verbose, follow_redirect):
+        self.timeout = timeout
+        self.headers = headers
+        self.verbose = verbose
+        self.follow_redirect = follow_redirect
+
+    # Perform HTTP request and return list of output lines
+    def request_target(self, target):
+        output = []
+        missing_sec_headers = []
+
+        sesh = requests.session()
+        sesh.keep_alive = False
+
+        try:
+            r = sesh.get(
+                target,
+                allow_redirects=self.follow_redirect,
+                verify=False,
+                timeout=self.timeout,
+                headers=self.headers,
             )
-        elif r.status_code in range(200, 299):
-            print(
-                f"{cli.green}SUCCESS{cli.endc} - {r.url} [{cli.green}{r.status_code}{cli.endc}]"
-            )
-            for head in information_headers:
-                resp = r.headers.get(head)
-                if resp:
-                    print(f"├─{cli.blue}[~]{cli.endc} {head}: {resp}")
-            for head in sec_headers:
-                resp = r.headers.get(head)
-                if resp:
-                    print(
-                        f"├─{cli.green}[+]{cli.endc} Header {cli.green}{head}{cli.endc} is present! (Value: {resp})"
-                    )
+
+            code = r.status_code
+
+            # Status line
+            if 100 <= code < 200:
+                output.append(f"{cli.blue}INFO{cli.endc} - {r.url} [{cli.blue}{code}{cli.endc}]")
+            elif 200 <= code < 300:
+                output.append(f"{cli.green}SUCCESS{cli.endc} - {r.url} [{cli.green}{code}{cli.endc}]")
+            elif 300 <= code < 400:
+                location = r.headers.get("location", "N/A")
+                output.append(f"{cli.yellow}REDIRECTION{cli.endc} - {r.url} [{cli.yellow}{code}{cli.endc}] → {location}")
+            elif 400 <= code < 500:
+                output.append(f"{cli.purple}CLIENT_ERROR{cli.endc} - {r.url} [{cli.purple}{code}{cli.endc}]")
+            elif 500 <= code < 600:
+                output.append(f"{cli.red}SERVER_ERROR{cli.endc} - {r.url} [{cli.red}{code}{cli.endc}]")
+
+            # Info headers
+            for head in INFO_HEADERS:
+                val = r.headers.get(head)
+                if val:
+                    output.append(f"├─{cli.blue}[~]{cli.endc} {head}: {val}")
+
+            # Security headers
+            for head in SEC_HEADERS:
+                val = r.headers.get(head)
+                if val:
+                    output.append(f"├─{cli.green}[+]{cli.endc} Header {cli.green}{head}{cli.endc} is present! (Value: {val})")
                 else:
-                    print(
-                        f"├─{cli.yellow}[!]{cli.endc} Missing security header: {cli.yellow}{head}{cli.endc}"
-                    )
                     missing_sec_headers.append(head)
-            for head in cache_headers:
-                resp = r.headers.get(head)
-                if resp:
-                    print(
-                        f"├─{cli.white}[*]{cli.endc} Cache control header {cli.white}{head}{cli.endc} is present! (Value: {resp})"
-                    )
-            print(
-                f"└─ Missing {cli.bold}{len(missing_sec_headers)}{cli.endc} security headers...\n"
-            )        
-        elif r.status_code in range(300, 399):
-            print(
-                f'{cli.yellow}REDIRECTION{cli.endc} - {r.url} [{cli.yellow}{r.status_code}{cli.endc}] {cli.yellow}→{cli.endc} {r.headers["location"]}'
-            )
-        elif r.status_code in range(400, 499):
-            print(
-                f"{cli.purple}CLIENT_ERROR{cli.endc} - {r.url} [{cli.purple}{r.status_code}{cli.endc}]"
-            )
-        elif r.status_code in range(500, 599):
-            print(
-                f"{cli.red}SERVER_ERROR{cli.endc} - {r.url} [{cli.red}{r.status_code}{cli.endc}]"
-            )
-        else:
-            pass
-    except requests.exceptions.ConnectTimeout:
-        if verbose is True:
-            print(
-                f"{cli.red}TIMEOUT{cli.endc} - {target} [{cli.red}after {timeout}/s {cli.endc}]"
-            )
-        return None
-    except Exception as E:
-        if verbose is True:
-            print(f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}{E}{cli.endc}]")
-        return None
+                    output.append(f"├─{cli.yellow}[!]{cli.endc} Missing security header: {cli.yellow}{head}{cli.endc}")
+
+            # Cache headers
+            for head in CACHE_HEADERS:
+                val = r.headers.get(head)
+                if val:
+                    output.append(f"├─{cli.white}[*]{cli.endc} Cache control header {cli.white}{head}{cli.endc} is present! (Value: {val})")
+
+            # Summary of missing security headers
+            output.append(f"└─ Missing {cli.bold}{len(missing_sec_headers)}{cli.endc} security headers...\n")
+
+        except requests.exceptions.ConnectTimeout:
+            msg = f"{cli.red}TIMEOUT{cli.endc} - {target} [{cli.red}after {self.timeout}/s{cli.endc}]"
+            output.append(msg)
+            if self.verbose:
+                output.append(f"{cli.yellow}[VERBOSE]{cli.endc} Connection timed out.")
+
+        except requests.exceptions.ConnectionError as e:
+            msg = f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}ConnectionError{cli.endc}]"
+            output.append(msg)
+            if self.verbose:
+                output.append(f"{cli.yellow}[VERBOSE]{cli.endc} Exception details: {e}")
+
+        except Exception as e:
+            msg = f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}{e}{cli.endc}]"
+            output.append(msg)
+            if self.verbose:
+                output.append(f"{cli.yellow}[VERBOSE]{cli.endc} Unexpected exception.")
+
+        return output
 
 
 # Init
 def __init__():
     parser = argparse.ArgumentParser(
-        prog="reconraccoon.py shcheck", description="Shcheck Module"
+        prog="reconraccoon.py shcheck",
+        description="Shcheck Module",
     )
     parser.add_argument(
-        "-t",
-        "--target",
+        "-t", "--target",
         dest="target",
         type=str,
         required=True,
         help="Target URLs or IPs (str/file)",
     )
     parser.add_argument(
-        "-r",
-        "--request-timeout",
+        "-r", "--request-timeout",
         dest="timeout",
         type=float,
         default=1.0,
-        help="Timeout for all http requests (default=1.0)",
+        help="Timeout for all HTTP requests (default=1.0)",
     )
     parser.add_argument(
-        "-a",
-        "--active-threads",
+        "-a", "--active-threads",
         dest="threads",
         type=int,
         default=30,
-        help="Threads for all http requests (default=30)",
+        help="Threads for all HTTP requests (default=30)",
     )
     parser.add_argument(
-        "-u",
-        "--user-agent",
+        "-u", "--user-agent",
         dest="user_agent",
         default="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
         type=str,
-        help="Use custom user agent",
+        help="Custom User-Agent header",
     )
     parser.add_argument(
-        "-f", "--follow-redirects", action="store_true", help="Follow redirects"
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
+        "-f", "--follow-redirects",
         action="store_true",
-        help="Display verbose output (timeouts/errors)",
+        help="Follow HTTP redirects",
     )
-    args, sysargs = parser.parse_known_args()
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Display verbose debugging output (timeouts/errors)",
+    )
     # Call main function
+    args, sysargs = parser.parse_known_args()
     main(args)
 
 
 # Main
 def main(args):
-    # Prefix
-    target = functions.check_prefix(args.target, None)
-    # Check header
+    targets = functions.check_prefix(args.target, None)
+
+    worker = ShcheckWorker(
+        timeout=args.timeout,
+        headers={"User-Agent": args.user_agent},
+        verbose=args.verbose,
+        follow_redirect=args.follow_redirects,
+    )
+
     try:
-        threads = []
         with ThreadPoolExecutor(max_workers=args.threads) as executor:
-            for url in target:
-                threads.append(
-                    executor.submit(
-                        request_target,
-                        target=url,
-                        timeout=args.timeout,
-                        headers={"User-Agent": args.user_agent},
-                        verbose=args.verbose,
-                        follow_redirect=args.follow_redirects,
-                    )
-                )
+            futures = [executor.submit(worker.request_target, url) for url in targets]
+
+            with tqdm(total=len(futures), unit=" requests", dynamic_ncols=True, leave=True) as pbar:
+                for future in as_completed(futures):
+                    for line in future.result():
+                        tqdm.write(line)
+                    pbar.update(1)
     except KeyboardInterrupt:
-        print(f"{cli.red} leaving..{cli.endc}")
-        exit()
+        print(f"{cli.red}leaving..{cli.endc}")
+        exit(0)
+

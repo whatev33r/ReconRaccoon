@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import argparse
-from concurrent.futures import ThreadPoolExecutor
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 import requests
 import urllib3
+from collections import Counter
 
 from ReconRaccoon.src.framework import cli, functions
 
@@ -12,174 +13,201 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 requests.adapters.DEFAULT_RETRIES = 100
 
 
-def request_target(
-    target, timeout, headers, verbose, include_filter, exclude_filter, follow_redirect
-):
-    sesh = requests.session()
-    sesh.keep_alive = False
-    try:
-        r = sesh.get(
-            target,
-            allow_redirects=follow_redirect,
-            verify=False,
-            timeout=timeout,
-            headers=headers,
-        )
-        filter_out(req=r, include=include_filter, exclude=exclude_filter)
-    except requests.exceptions.ConnectTimeout:
-        if verbose is True:
-            print(
-                f"{cli.red}TIMEOUT{cli.endc} - {target} [{cli.red}after {timeout}/s {cli.endc}]"
+class ResolveWorker:
+    # Initialize the worker with request settings
+    def __init__(self, timeout, headers, verbose, include_filter, exclude_filter, follow_redirect):
+        self.timeout = timeout
+        self.headers = headers
+        self.verbose = verbose
+        self.include_filter = include_filter
+        self.exclude_filter = exclude_filter
+        self.follow_redirect = follow_redirect
+        self.counts = Counter()
+
+    # Send request to a target and filter response
+    def request_target(self, target):
+        output = []
+
+        sesh = requests.session()
+        sesh.keep_alive = False
+
+        try:
+            r = sesh.get(
+                target,
+                allow_redirects=self.follow_redirect,
+                verify=False,
+                timeout=self.timeout,
+                headers=self.headers,
             )
-        return None
-    except Exception as E:
-        if verbose is True:
-            print(f"{cli.red}ERROR{cli.endc} - {target} [{cli.red}{E}{cli.endc}]")
-        return None
+            lines, code_category = self.filter_response(r)
+            output.extend(lines)
+            if code_category:
+                self.counts[code_category] += 1
+
+        except requests.exceptions.ConnectTimeout:
+            if self.verbose:
+                output.append(
+                    f"{cli.red}TIMEOUT{cli.endc} - {target} "
+                    f"[{cli.red}after {self.timeout}/s{cli.endc}]"
+                )
+
+        except Exception as e:
+            if self.verbose:
+                output.append(
+                    f"{cli.red}ERROR{cli.endc} - {target} "
+                    f"[{cli.red}{e}{cli.endc}]"
+                )
+
+        return output
+
+    # Filter the response based on include/exclude filters
+    def filter_response(self, req):
+        lines = []
+        srv = f"({req.headers['server']})" if "server" in req.headers else ""
+        code = req.status_code
+        code_category = None
+
+        def emit(label, color):
+            lines.append(f"{color}{label}{cli.endc} - {req.url} [{color}{code}{cli.endc}] {srv}")
+
+        # INCLUDE FILTER MODE
+        if self.include_filter:
+            if self.include_filter == "INFO" and 100 <= code < 200:
+                emit("INFO", cli.blue)
+                code_category = "INFO"
+            elif self.include_filter == "SUCCESS" and 200 <= code < 300:
+                emit("SUCCESS", cli.green)
+                code_category = "SUCCESS"
+            elif self.include_filter == "REDIRECTION" and 300 <= code < 400:
+                location = req.headers.get("location", "N/A")
+                lines.append(f"{cli.yellow}REDIRECTION{cli.endc} - {req.url} [{cli.yellow}{code}{cli.endc}] {srv} {cli.yellow}→{cli.endc} {location}")
+                code_category = "REDIRECTION"
+            elif self.include_filter == "CLIENT_ERROR" and 400 <= code < 500:
+                emit("CLIENT_ERROR", cli.purple)
+                code_category = "CLIENT_ERROR"
+            elif self.include_filter == "SERVER_ERROR" and 500 <= code < 600:
+                emit("SERVER_ERROR", cli.red)
+                code_category = "SERVER_ERROR"
+            return lines, code_category
+
+        # EXCLUDE FILTER MODE
+        if 100 <= code < 200 and self.exclude_filter != "INFO":
+            emit("INFO", cli.blue)
+            code_category = "INFO"
+        elif 200 <= code < 300 and self.exclude_filter != "SUCCESS":
+            emit("SUCCESS", cli.green)
+            code_category = "SUCCESS"
+        elif 300 <= code < 400 and self.exclude_filter != "REDIRECTION":
+            location = req.headers.get("location", "N/A")
+            lines.append(f"{cli.yellow}REDIRECTION{cli.endc} - {req.url} [{cli.yellow}{code}{cli.endc}] {srv} {cli.yellow}→{cli.endc} {location}")
+            code_category = "REDIRECTION"
+        elif 400 <= code < 500 and self.exclude_filter != "CLIENT_ERROR":
+            emit("CLIENT_ERROR", cli.purple)
+            code_category = "CLIENT_ERROR"
+        elif 500 <= code < 600 and self.exclude_filter != "SERVER_ERROR":
+            emit("SERVER_ERROR", cli.red)
+            code_category = "SERVER_ERROR"
+
+        return lines, code_category
 
 
-def filter_out(req, exclude, include):
-    if "server" in req.headers:
-        srv = f"({req.headers['server']})"
-    else:
-        srv = ""
-    if include is not None:
-        if include == "INFO" and req.status_code in range(100, 199):
-            print(
-                f"{cli.blue}INFO{cli.endc} - {req.url} [{cli.blue}{req.status_code}{cli.endc}] {srv}"
-            )
-        elif include == "SUCCESS" and req.status_code in range(200, 299):
-            print(
-                f"{cli.green}SUCCESS{cli.endc} - {req.url} [{cli.green}{req.status_code}{cli.endc}] {srv}"
-            )
-        elif include == "REDIRECTION" and req.status_code in range(300, 399):
-            print(
-                f'{cli.yellow}REDIRECTION{cli.endc} - {req.url} [{cli.yellow}{req.status_code}{cli.endc}] {srv} {cli.yellow}→{cli.endc} {req.headers["location"]}'
-            )
-        elif include == "CLIENT_ERROR" and req.status_code in range(400, 499):
-            print(
-                f"{cli.purple}CLIENT_ERROR{cli.endc} - {req.url} [{cli.purple}{req.status_code}{cli.endc}] {srv}"
-            )
-        elif include == "SERVER_ERROR" and req.status_code in range(500, 599):
-            print(
-                f"{cli.red}SERVER_ERROR{cli.endc} - {req.url} [{cli.red}{req.status_code}{cli.endc}] {srv}"
-            )
-        else:
-            pass
-    if include is None:
-        if req.status_code in range(100, 199) and exclude != "INFO":
-            print(
-                f"{cli.blue}INFO{cli.endc} - {req.url} [{cli.blue}{req.status_code}{cli.endc}] {srv}"
-            )
-        elif req.status_code in range(200, 299) and exclude != "SUCCESS":
-            print(
-                f"{cli.green}SUCCESS{cli.endc} - {req.url} [{cli.green}{req.status_code}{cli.endc}] {srv}"
-            )
-        elif req.status_code in range(300, 399) and exclude != "REDIRECTION":
-            print(
-                f'{cli.yellow}REDIRECTION{cli.endc} - {req.url} [{cli.yellow}{req.status_code}{cli.endc}] {srv} {cli.yellow}→{cli.endc} {req.headers["location"]}'
-            )
-        elif req.status_code in range(400, 499) and exclude != "CLIENT_ERROR":
-            print(
-                f"{cli.purple}CLIENT_ERROR{cli.endc} - {req.url} [{cli.purple}{req.status_code}{cli.endc}] {srv}"
-            )
-        elif req.status_code in range(500, 599) and exclude != "SERVER_ERROR":
-            print(
-                f"{cli.red}SERVER_ERROR{cli.endc} - {req.url} [{cli.red}{req.status_code}{cli.endc}] {srv}"
-            )
-        else:
-            pass
-
-
+# Init
 def __init__():
     parser = argparse.ArgumentParser(
-        prog="reconraccoon.py resolve", description="Resolve Module"
+        prog="reconraccoon.py resolve",
+        description="Resolve Module",
     )
+
     parser.add_argument(
-        "-t",
-        "--target",
+        "-t", "--target",
         dest="target",
         type=str,
         required=True,
         help="Target URLs or IPs (str/file)",
     )
     parser.add_argument(
-        "-r",
-        "--request-timeout",
+        "-r", "--request-timeout",
         dest="timeout",
         type=float,
         default=1.0,
         help="Timeout for all http requests (default=1.0)",
     )
     parser.add_argument(
-        "-a",
-        "--active-threads",
+        "-a", "--active-threads",
         dest="threads",
         type=int,
         default=30,
         help="Threads for all http requests (default=30)",
     )
     parser.add_argument(
-        "-u",
-        "--user-agent",
+        "-u", "--user-agent",
         dest="user_agent",
-        default="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
         type=str,
+        default="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/109.0.0.0 Safari/537.36",
         help="Use custom user agent",
     )
     parser.add_argument(
-        "-i",
-        "--include-filter",
+        "-i", "--include-filter",
         dest="include_filter",
-        type=str,
-        choices=["INFO", "SUCCESS", "REDIRECTION", "CLIENT_ERROR", "SERVER_ERROR"],
-        help="Include HTTP reponse type",
+        choices=["INFO","SUCCESS","REDIRECTION","CLIENT_ERROR","SERVER_ERROR"],
+        help="Include HTTP response type",
     )
     parser.add_argument(
-        "-x",
-        "--exclude-filter",
+        "-x", "--exclude-filter",
         dest="exclude_filter",
-        type=str,
-        choices=["INFO", "SUCCESS", "REDIRECTION", "CLIENT_ERROR", "SERVER_ERROR"],
-        help="Exclude HTTP reponse type",
+        choices=["INFO","SUCCESS","REDIRECTION","CLIENT_ERROR","SERVER_ERROR"],
+        help="Exclude HTTP response type",
     )
     parser.add_argument(
-        "-f", "--follow-redirects", action="store_true", help="Follow redirects"
+        "-f", "--follow-redirects",
+        action="store_true",
+        help="Follow redirects",
     )
     parser.add_argument(
-        "-c",
-        "--common-ports",
+        "-c", "--common-ports",
         action="store_true",
         help="Check all common webserver ports (seclists)",
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
+        "-v", "--verbose",
         action="store_true",
-        help="Display verbose output (timeouts/errors)",
     )
+    # Call main function
     args, sysargs = parser.parse_known_args()
     main(args)
 
 
+# Main
 def main(args):
-    target = functions.check_prefix(args.target, args.common_ports)
+    targets = functions.check_prefix(args.target, args.common_ports)
+    worker = ResolveWorker(
+        timeout=args.timeout,
+        headers={"User-Agent": args.user_agent},
+        verbose=args.verbose,
+        include_filter=args.include_filter,
+        exclude_filter=args.exclude_filter,
+        follow_redirect=args.follow_redirects,
+    )
+
     try:
-        threads = []
         with ThreadPoolExecutor(max_workers=args.threads) as executor:
-            for url in target:
-                threads.append(
-                    executor.submit(
-                        request_target,
-                        target=url,
-                        timeout=args.timeout,
-                        headers={"User-Agent": args.user_agent},
-                        verbose=args.verbose,
-                        include_filter=args.include_filter,
-                        exclude_filter=args.exclude_filter,
-                        follow_redirect=args.follow_redirects,
-                    )
-                )
+            futures = [executor.submit(worker.request_target, url) for url in targets]
+            with tqdm(total=len(futures), unit=" requests", dynamic_ncols=True, leave=True) as pbar:
+                for future in as_completed(futures):
+                    for line in future.result():
+                        tqdm.write(line)
+                    pbar.update(1)
+        # Print summary
+        tqdm.write(f"\n{cli.bold}[SUMMARY]{cli.endc}")
+        for cat in ["INFO", "SUCCESS", "REDIRECTION", "CLIENT_ERROR", "SERVER_ERROR"]:
+            count = worker.counts.get(cat, 0)
+            if count:
+                tqdm.write(f"{cli.green}[+]{cli.endc} {cat}: {count}")
+            else:
+                tqdm.write(f"{cli.blue}[*]{cli.endc} {cat}: {count}")
     except KeyboardInterrupt:
         print(f"{cli.red} leaving..{cli.endc}")
-        exit()
+        exit(0)
+
