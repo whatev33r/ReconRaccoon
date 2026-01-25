@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 import argparse
 import asyncio
 import uuid
@@ -11,13 +12,12 @@ from ReconRaccoon.src.framework import cli, functions
 
 
 class SubEnum:
-    # Initialize class with target, wordlist, verbosity, concurrency, and output flag
-    def __init__(self, target, wordlist, verbose, threads=500, write_output=False):
+    # Initialize class
+    def __init__(self, target, wordlist, verbose, threads):
         self.target = target
-        self.wordlist = self.filter_wordlist(wordlist)
+        self.wordlist = self.load_wordlist(wordlist)
         self.verbose = verbose
         self.threads = threads
-        self.write_output_flag = write_output
 
         self.resolver = None
         self.wildcard_ips = set()
@@ -25,47 +25,65 @@ class SubEnum:
         self.ips = []
 
     # Load and clean wordlist
-    def filter_wordlist(self, wordlist):
-        with open(wordlist, "r", encoding="utf-8", errors="ignore") as f:
-            words = {line.strip().lower() for line in f if line.strip()}
-        return list(words)
+    def load_wordlist(self, path):
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            return list({line.strip().lower() for line in f if line.strip()})
 
-    # Initialize async DNS resolver
+    # Initialize resolver bound to the running loop
     async def init_resolver(self):
         loop = asyncio.get_running_loop()
         self.resolver = aiodns.DNSResolver(loop=loop)
 
-    # Detect wildcard DNS using multiple fake subdomains
+    # Wildcard DNS detection using multiple probes
     async def detect_wildcard(self):
         fake_count = 6
-        threshold = 2  # Must appear ≥ threshold times to be considered wildcard
+        threshold = 2
 
         fake_subs = [
-            f"{uuid.uuid4().hex[:10]}.{self.target}" for _ in range(fake_count)
+            f"{uuid.uuid4().hex[:10]}.{self.target}"
+            for _ in range(fake_count)
         ]
 
         ips = []
 
+        tqdm.write(
+            f"{cli.blue}[$]{cli.endc} Running wildcard DNS probes ({fake_count})"
+        )
+
         for fake in fake_subs:
             try:
                 result = await self.resolver.query(fake, "A")
-                resolved_ips = [r.host for r in result]
-                ips.extend(resolved_ips)
-                tqdm.write(f"{cli.yellow}[~]{cli.endc} Wildcard probe {fake} → {', '.join(resolved_ips)}")
-            except Exception as e:
-                tqdm.write(f"{cli.yellow}[~]{cli.endc} Wildcard probe {fake} → NXDOMAIN / failed ({e})")
+                resolved = [r.host for r in result]
+                ips.extend(resolved)
+
+                tqdm.write(
+                    f"{cli.yellow}[~]{cli.endc} Probe {fake} → {', '.join(resolved)}"
+                )
+            except aiodns.error.DNSError:
+                tqdm.write(
+                    f"{cli.yellow}[~]{cli.endc} Probe {fake} → NXDOMAIN"
+                )
 
         if not ips:
-            tqdm.write(f"{cli.green}[+]{cli.endc} No wildcard DNS detected for {self.target}")
+            tqdm.write(
+                f"{cli.green}[+]{cli.endc} No wildcard DNS detected for {self.target}"
+            )
             return
 
         counts = Counter(ips)
-        self.wildcard_ips = {ip for ip, c in counts.items() if c >= threshold}
+        self.wildcard_ips = {
+            ip for ip, c in counts.items() if c >= threshold
+        }
 
         if self.wildcard_ips:
-            tqdm.write(f"{cli.yellow}[!]{cli.endc} Wildcard DNS detected for {self.target} → {', '.join(self.wildcard_ips)}")
+            tqdm.write(
+                f"{cli.yellow}[!]{cli.endc} Wildcard DNS detected for {self.target} → "
+                f"{', '.join(self.wildcard_ips)}"
+            )
         else:
-            tqdm.write(f"{cli.green}[+]{cli.endc} No wildcard DNS detected for {self.target}")
+            tqdm.write(
+                f"{cli.green}[+]{cli.endc} No wildcard DNS detected for {self.target}"
+            )
 
     # Resolve a single subdomain
     async def resolve_subdomain(self, sem, sub):
@@ -75,12 +93,17 @@ class SubEnum:
             try:
                 result = await self.resolver.query(dns, "A")
                 for r in result:
-                    ip = r.host
-                    is_wildcard = ip in self.wildcard_ips
-                    return {"host": dns, "ip": ip, "wildcard": is_wildcard}
-            except Exception as e:
+                    return {
+                        "host": dns,
+                        "ip": r.host,
+                        "wildcard": r.host in self.wildcard_ips,
+                    }
+
+            except aiodns.error.DNSError as e:
                 if self.verbose:
-                    tqdm.write(f"{cli.red}[VERBOSE]{cli.endc} {dns} failed: {e}")
+                    tqdm.write(
+                        f"{cli.red}[VERBOSE]{cli.endc} {dns} failed: {e}"
+                    )
                 return None
 
     # Main async runner
@@ -89,51 +112,66 @@ class SubEnum:
         await self.detect_wildcard()
 
         sem = asyncio.Semaphore(self.threads)
-        tasks = [self.resolve_subdomain(sem, sub) for sub in self.wordlist]
+        tasks = [
+            self.resolve_subdomain(sem, sub)
+            for sub in self.wordlist
+        ]
 
-        for coro in tqdm(asyncio.as_completed(tasks),
-                         total=len(tasks),
-                         unit=" requests",
-                         dynamic_ncols=True,
-                         leave=True):
-            result = await coro
-            if result:
-                host = result["host"]
-                ip = result["ip"]
-                wildcard = result["wildcard"]
+        for coro in tqdm(
+            asyncio.as_completed(tasks),
+            total=len(tasks),
+            unit=" requests",
+            dynamic_ncols=True,
+            leave=True,
+        ):
+            try:
+                result = await coro
+            except Exception as E:
+                # CRITICAL FIX: consume Future exceptions
+                if self.verbose:
+                    tqdm.write(
+                        f"{cli.red}[VERBOSE]{cli.endc} Task failed unexpectedly: {E}"
+                    )
+                continue
 
-                if wildcard:
-                    if self.verbose:
-                        tqdm.write(f"{cli.yellow}[WILDCARD]{cli.endc} {host}\tIP: {ip}")
-                    continue  # skip normal output
+            if not result:
+                continue
 
-                # Normal non-wildcard output
-                tqdm.write(f"{cli.green}[+]{cli.endc} Hostname: {host}\tIP: {ip}")
-                self.subs.append(host)
-                self.ips.append(ip)
+            host = result["host"]
+            ip = result["ip"]
+            wildcard = result["wildcard"]
 
-        if self.write_output_flag:
-            self.write_outputs()
+            if wildcard:
+                if self.verbose:
+                    tqdm.write(
+                        f"{cli.yellow}[WILDCARD]{cli.endc} {host}\tIP: {ip}"
+                    )
+                continue
+
+            tqdm.write(
+                f"{cli.green}[+]{cli.endc} Hostname: {host}\tIP: {ip}"
+            )
+            self.subs.append(host)
+            self.ips.append(ip)
+
         self.print_summary()
 
-    # Write results to output files
-    def write_outputs(self):
-        with open("subs.txt", "w") as f:
-            for line in self.subs:
-                f.write(f"{line}\n")
-
-        with open("ips.txt", "w") as f:
-            for line in self.ips:
-                f.write(f"{line}\n")
-
-    # Print summary at the end
+    # Summary output
     def print_summary(self):
         tqdm.write(f"\n{cli.bold}[SUMMARY]{cli.endc}")
-        tqdm.write(f"{cli.green}[+]{cli.endc} Total real subdomains: {len(self.subs)}")
+        tqdm.write(
+            f"{cli.green}[+]{cli.endc} Total real subdomains: {len(self.subs)}"
+        )
+
         if self.wildcard_ips:
-            tqdm.write(f"{cli.yellow}[!]{cli.endc} Wildcard IPs detected: {', '.join(self.wildcard_ips)}")
+            tqdm.write(
+                f"{cli.yellow}[!]{cli.endc} Wildcard IPs detected: "
+                f"{', '.join(self.wildcard_ips)}"
+            )
         else:
-            tqdm.write(f"{cli.green}[+]{cli.endc} No wildcard IPs detected")
+            tqdm.write(
+                f"{cli.green}[+]{cli.endc} No wildcard IPs detected"
+            )
 
 
 # Init
@@ -142,28 +180,27 @@ def __init__():
         prog="reconraccoon.py subenum",
         description="Subdomain Enumeration Module",
     )
+
     parser.add_argument(
         "-t", "--target",
         required=True,
+        help="Target Domain (str/file)",
     )
     parser.add_argument(
         "-w", "--wordlist",
         default="resources/subdomains-top1million-20000.txt",
-    )
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
+        help="Path to Wordlist (file)"
     )
     parser.add_argument(
         "-a", "--active-threads",
         type=int,
-        default=500,
-        help="Concurrent DNS queries",
+        default=30,
+        help="Threads for all DNS requests (default=30)",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-v", "--verbose",
         action="store_true",
-        help="Write results to output files (subs.txt / ips.txt)",
+        help="Display verbose debugging output (timeouts/errors)",
     )
     # Call main function
     args, sysargs = parser.parse_known_args()
@@ -174,13 +211,17 @@ def __init__():
 def main(args):
     try:
         targets = functions.check_prefix(args.target, None)
-        target = targets[0].replace("http://", "").replace("https://", "").strip("/")
+        target = (
+            targets[0]
+            .replace("http://", "")
+            .replace("https://", "")
+            .strip("/")
+        )
         sub_enum = SubEnum(
             target=target,
             wordlist=args.wordlist,
             verbose=args.verbose,
             threads=args.active_threads,
-            write_output=args.output,
         )
         asyncio.run(sub_enum.run())
     except KeyboardInterrupt:

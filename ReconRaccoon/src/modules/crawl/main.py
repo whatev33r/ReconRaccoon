@@ -127,8 +127,8 @@ def __init__():
         "-a", "--active-threads",
         dest="threads",
         type=int,
-        default=20,
-        help="Threads for all http requests (default=20)",
+        default=30,
+        help="Threads for all http requests (default=30)",
     )
     parser.add_argument(
         "-u", "--user-agent",

@@ -87,7 +87,7 @@ class ShcheckWorker:
             for head in INFO_HEADERS:
                 val = r.headers.get(head)
                 if val:
-                    output.append(f"├─{cli.blue}[~]{cli.endc} {head}: {val}")
+                    output.append(f"├─{cli.blue}[*]{cli.endc} {head}: {val}")
 
             # Security headers
             for head in SEC_HEADERS:
@@ -102,7 +102,7 @@ class ShcheckWorker:
             for head in CACHE_HEADERS:
                 val = r.headers.get(head)
                 if val:
-                    output.append(f"├─{cli.white}[*]{cli.endc} Cache control header {cli.white}{head}{cli.endc} is present! (Value: {val})")
+                    output.append(f"├─{cli.white}[~]{cli.endc} Cache control header {cli.white}{head}{cli.endc} is present! (Value: {val})")
 
             # Summary of missing security headers
             output.append(f"└─ Missing {cli.bold}{len(missing_sec_headers)}{cli.endc} security headers...\n")
